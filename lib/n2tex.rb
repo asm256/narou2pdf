@@ -106,6 +106,21 @@ EOS
       f.write "\\end{document}\n"
     }
   end
+  def bouten? oya , ko
+    oya.size == ko.size
+  end
+  def bouten_v? oya,ko
+    return false unless bouten?(oya,ko)
+    #wikipediaの圏点からリスト取得＋全半角の・
+    return ko.match /^[●○▲△◎◉・･.﹅﹆]+$/
+  end
+  def bouten oya, ko
+    out = ""
+    oya.size.times{|x|
+      out << "\\kana{#{oya[x]}}{#{ko[x]}}"
+    }
+    out
+  end
   #単純にtxtで指示された文章をエスケープ
   def simplestr2tex txt
     txt.gsub("\\"){"\\verb|\\|"}.gsub(/[#$%&_{}>]/){|c|"{\\" + c+"}"}
@@ -143,6 +158,7 @@ EOS
     }.
 #ルビその１
     gsub( /[｜|]([^\n]*?)(《[^》\n]*》|（[^）\n]*）|\([^\)\n]*\))/){
+      next bouten($1,$2[1..-2]) if bouten?($1 ,$2[1..-2])
       next $2 if ($1.eql? "") || $1[-1] == "|" || $1[-1] == "｜"
       next "\\kana{#{$1}}{#{$2[1..-2]}}"
     }.
@@ -150,6 +166,7 @@ EOS
     gsub(/(\p{Han}+)(《[\p{Katakana}\p{Hiragana}ーｰﾞﾟ・･]+》
     |\([\p{Katakana}\p{Hiragana}ーｰﾞﾟ・･]+\)
     |（[\p{Katakana}\p{Hiragana}ーｰﾞﾟ・･]+）)/x){
+     next bouten($1,$2[1..-2]) if bouten_v?($1 ,$2[1..-2])
      "\\kana{#{$1}}{#{$2}}"
     }.
 #セリフは段落を変える
