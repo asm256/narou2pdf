@@ -127,6 +127,7 @@ def downloadall(url)
     puts "話が短くなっています。#{ncode}のバックアップをオススメします"
     raise "part delete"
   end
+  outputs = ""
   page.forms[0].field_with(:name => "no").options.each{|o|
     o.select
     c_index = o.to_s.to_i-1#インデックスのカウンタ
@@ -168,17 +169,19 @@ def downloadall(url)
     txt.force_encoding("utf-8")
     if olds then #更新時
       output = str_diff(olds , txt)
-      File.open(File.join(".",o.to_s + ".diff"),"wb"){|f|
-#ここらへんでdiffのヘッダ部分を
+#diffのヘッダが適当なのでそのうち直そう
  #--- b.txt 2013-08-27 11:00:37.000000000 +0900
  #+++ a.txt 2014-08-27 10:47:26.000000000 +0900
-       f.write output
-      } if output && output.size > 0
+      outputs << "+-@ #{novel_info_flat[c_index][:title]}\n#{output}" if output && output.size > 0
     end
     novel_cache.write "#{o.to_s}.txt",txt
     novel_cache.write "#{o.to_s}.tex" , nconv.txt2tex(txt,novel_info_flat[c_index])
   }
-#diffをひとまとめにしたモノがあってもいい気がする
+#diffをひとまとめに
+  if outputs.size > 0 then
+    File.open('diff.txt','w').write outputs
+    puts '更新がありました'
+  end
   #ビルド
   build(novel_cache,novel_info)
 end
