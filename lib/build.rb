@@ -24,7 +24,7 @@ def build(ncache , ninfo)
     rescue Errno::EACCES=>e
       puts "PDFが開かれてる事を検知"
       e.to_s.scan(/Permission denied @ unlink_internal - (.*pdf)$/){|s|
-        system "pdfclose --file #{s[0]}"
+        `pdfclose --file #{s[0]}`
       }
     rescue Errno::ENOENT
     end
@@ -55,7 +55,8 @@ EOS
   FileUtils.mv(ncache.path('index.pdf'),"#{outtitle}.pdf")
   #print("表示しますか？表示しないときはnを入力\n")
   #return if gets.strip() =~ /^[nN]/
-  system "pdfopen --file #{outtitle}.pdf"
+  puts 'open pdf'
+  `pdfopen -r11 --file #{outtitle}.pdf`
 end
 
 def build2

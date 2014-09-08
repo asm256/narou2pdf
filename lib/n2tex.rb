@@ -121,6 +121,44 @@ EOS
     }
     out
   end
+  def tag_narou_image txt
+#画像の挿入部実装
+    txt.gsub(/\\verb\|<\|[iｉ]([０-９]+?)\|([０-９]+?)\\verb\|>\|/){
+      agent = Mechanize.new
+      agent.user_agent =
+        'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)'
+      d1 = $1.tr("０-９","0-9")
+      d2 = $2.tr("０-９","0-9")
+      puts "[画像] http://#{d2}.mitemin.net/i#{d1}/"
+      page = agent.get("http://#{d2}.mitemin.net/i#{d1}/")
+      pic_link = page.link_with(:text=>'最大化')
+      fnpic = pic_link.uri.path.split("/")[-1]
+      if !@ncache.exist? fnpic then #画像はまだダウンロードされていない
+        pic = pic_link.click
+        @ncache.write(fnpic,pic.body)
+      end
+      `extractbb #{@ncache.path(fnpic)}` unless @ncache.exist? fnpic.gsub(/\..+$/){|x| ".xbb"}
+      img_opt = @SETTING[:IMGOPT]
+      @ncache.open(fnpic,'rb'){|f|
+        image = ImageSize.new(f)
+        muki=((@SETTING[:DIRECTION] == :tate) ^ (image.width < image.height)) ?
+          ["width=","angle=90"] : ["height=","angle=90"]
+          #["width=","angle=0"] : ["height=","angle=90"]
+        #img_opt ="," + muki[0] + @SETTING[:IMGLONG] +","+muki[1]
+        #img_opt = muki[1] + ",width=325pt,height=489pt,keepaspectratio"
+        img_opt = muki[1] + ",width=489pt,height=325pt,keepaspectratio"
+      }
+      next <<EOS
+\n 挿絵\\ref{fig:#{d1}:#{d2}}
+\\begin{figure}
+    \\centering
+    \\includegraphics[#{img_opt}]{#{fnpic.split("/")[-1]}}
+    \\caption{http://#{d2}.mitemin.net/i#{d1}/}
+    \\label{fig:#{d1}:#{d2}}
+\\end{figure}
+EOS
+    }
+  end
   #単純にtxtで指示された文章をエスケープ
   def simplestr2tex txt
     txt.gsub("\\"){"\\verb|\\|"}.gsub(/[#$%&_{}>]/){|c|"{\\" + c+"}"}
@@ -175,38 +213,7 @@ EOS
     gsub(/^「/,"\n\\noindent\n\\hskip1pt「").
     gsub(/」$/,"」\n\n").
 #画像の挿入
-    gsub(/\\verb\|<\|[iｉ]([０-９]+?)\|([０-９]+?)\\verb\|>\|/){
-      agent = Mechanize.new
-      agent.user_agent =
-        'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)'
-      d1 = $1.tr("０-９","0-9")
-      d2 = $2.tr("０-９","0-9")
-      puts "[画像] http://#{d2}.mitemin.net/i#{d1}/"
-      page = agent.get("http://#{d2}.mitemin.net/i#{d1}/")
-      pic_link = page.link_with(:text=>'最大化')
-      fnpic = pic_link.uri.path.split("/")[-1]
-      if !@ncache.exist? fnpic then #画像はまだダウンロードされていない
-        pic = pic_link.click
-        @ncache.write(fnpic,pic.body)
-      end
-      `extractbb #{@ncache.path(fnpic)}` unless @ncache.exist? fnpic.gsub(/\..+$/){|x| ".xbb"}
-      img_opt = @SETTING[:IMGOPT]
-      @ncache.open(fnpic,'rb'){|f|
-        image = ImageSize.new(f)
-        muki=((@SETTING[:DIRECTION] == :tate) ^ (image.width < image.height)) ?
-          ["width=","angle=0"] : ["height=","angle=90"]
-        img_opt ="," + muki[0] + @SETTING[:IMGLONG] +","+muki[1]
-      }
-      next <<EOS
-\n 挿絵\\ref{fig:#{d1}:#{d2}}
-\\begin{figure}
-    \\centering
-    \\includegraphics[#{img_opt}]{#{fnpic.split("/")[-1]}}
-    \\caption{http://#{d2}.mitemin.net/#{d1}/}
-    \\label{fig:#{d1}:#{d2}}
-\\end{figure}
-EOS
-    }.
+    tap{|x|x.replace tag_narou_image x}.
     gsub("(?<!\\verb)|","{\\verb+|+}").
 #回転する記号をもどします。
     gsub(/(：⇒)/){

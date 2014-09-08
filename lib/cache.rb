@@ -20,7 +20,7 @@ class CacheUtil
     end
   end
   def read(name)
-    s = open(name,"rb:utf-8"){|f| f.read}
+    s = open(name,'rb:utf-8'){|f| f.read}
     s.force_encoding NKF.guess s unless s.valid_encoding?
     s
   end
