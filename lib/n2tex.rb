@@ -1,5 +1,9 @@
 # encoding: utf-8
 
+#参考資料 JIS X 4051
+#日本語組版処理の要件
+#http://www.w3.org/TR/jlreq/ja/
+
 #小説の情報を構造体にまとめる
 #:name 名前
 #:url  URL
@@ -59,6 +63,67 @@ class N2Tex
 \\newcommand{\\ExQue}{\\hbox to 1zw{\\ajLig{!?}}}
 \\newcommand{\\ExEx}{\\hbox to 1zw{\\ajLig{!!}}}
 \\newcommand{\\Z}{\\hspace{1zw}}
+\\makeatletter
+%\\noindent\\null の後で、行頭括弧が揃うようにする
+\\let\\orig@null=\\null
+\\def\\null{\\orig@null\\futurelet\\@let@token\\@@tondgnewline}
+
+%\\noindent の後で、行頭括弧が揃うようにする
+\\let\\orig@noindent=\\noindent
+\\def\\noindent{\\orig@noindent\\futurelet\\@let@token\\@@tondgnewline}
+
+%改行の後で、行頭括弧が揃うようにする
+\\def\\@tondgnewline{%
+  \\futurelet\\@let@token\\@@tondgnewline}
+\\def\\@@tondgnewline{%
+  \\ifx\\@let@token「
+    \\hskip.5zw\\<%
+  \\else
+    \\ifx\\@let@token（
+      \\hskip.5zw\\<%
+    \\else
+      \\ifx\\@let@token『
+        \\hskip.5zw\\<%
+      \\else
+        \\ifx\\@let@token［
+          \\hskip.5zw\\<%
+        \\else
+          \\ifx\\@let@token“
+            \\hskip.5zw\\<%
+          \\else
+            \\ifx\\@let@token‘
+              \\hskip.5zw\\<%
+            \\else
+              \\ifx\\@let@token〈
+                \\hskip.5zw\\<%
+              \\else
+                \\ifx\\@let@token《
+                  \\hskip.5zw\\<%
+                \\else
+                  \\ifx\\@let@token【
+                    \\hskip.5zw\\<%
+                  \\else
+                    \\ifx\\@let@token〔
+                      \\hskip.5zw\\<%
+                    \\fi
+                  \\fi
+                \\fi
+              \\fi
+            \\fi
+          \\fi
+        \\fi
+      \\fi
+    \\fi
+  \\fi}
+\\def\\@gnewline #1{
+  \\ifvmode
+    \\@nolnerr
+  \\else
+     \\unskip \\reserved@e {\\reserved@f#1}\\nobreak \\hfil \\break \\null
+    \\ignorespaces
+  \\fi
+  \\@tondgnewline}
+\\makeatother
 \\begin{document}
 \\begin{titlepage}
 \\Large \\begin{flushleft}#{@novel_info[:name]}
@@ -216,9 +281,8 @@ EOS
     }.
 #セリフは段落を変える
  #ただし、字下げはしない
- #noindentだけだと謎の合字しないバグに悩まされるので1ptだけずらす
-    gsub(/^「/,"\n\\noindent\n\\hskip1pt「").
-    gsub(/」$/,"」\n\n").
+    gsub(/^[「｢]/,"\n\\noindent\n「").
+    gsub(/[」｣]$/,"」\n").
 #画像の挿入
     tap{|x|x.replace tag_narou_image x}.
     gsub("(?<!\\verb)|","{\\verb+|+}").
