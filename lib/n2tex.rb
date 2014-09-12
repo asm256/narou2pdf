@@ -1,13 +1,5 @@
 # encoding: utf-8
-# encoding: utf-8
-#class String
-#  def debugout(dir,info)
-#    File.open(File.join(dir,info[:nth]+".debugout"),"wb"){|x|
-#      x.write self
-#    }
-#    self
-#  end
-#end
+
 #小説の情報を構造体にまとめる
 #:name 名前
 #:url  URL
@@ -31,8 +23,6 @@ class N2Tex
   def initialize(novel_info,novel_cache)
     @SETTING= {}
     @SETTING[:IMGOPT] = ""
-    @SETTING[:IMGLONG]   =  "140mm"
-    @SETTING[:DIRECTION] = :tate #| :yoko
     @novel_info = novel_info
     @ncache = novel_cache
   end
@@ -138,41 +128,64 @@ EOS
         @ncache.write(fnpic,pic.body)
       end
       `extractbb #{@ncache.path(fnpic)}` unless @ncache.exist? fnpic.gsub(/\..+$/){|x| ".xbb"}
-      img_opt = @SETTING[:IMGOPT]
-      @ncache.open(fnpic,'rb'){|f|
-        image = ImageSize.new(f)
-        muki=((@SETTING[:DIRECTION] == :tate) ^ (image.width < image.height)) ?
-          ["width=","angle=90"] : ["height=","angle=90"]
-          #["width=","angle=0"] : ["height=","angle=90"]
-        #img_opt ="," + muki[0] + @SETTING[:IMGLONG] +","+muki[1]
-        #img_opt = muki[1] + ",width=325pt,height=489pt,keepaspectratio"
-        img_opt = muki[1] + ",width=489pt,height=325pt,keepaspectratio"
-      }
+      img_opt = 'angle=90,width=\textwidth,height=\textheight,keepaspectratio'
       next <<EOS
 \n 挿絵\\ref{fig:#{d1}:#{d2}}
 \\begin{figure}
     \\centering
     \\includegraphics[#{img_opt}]{#{fnpic.split("/")[-1]}}
-    \\caption{http://#{d2}.mitemin.net/i#{d1}/}
+    \\caption{\\href{http://#{d2}.mitemin.net/i#{d1}/}{http://#{d2}.mitemin.net/i#{d1}/}}
     \\label{fig:#{d1}:#{d2}}
 \\end{figure}
 EOS
     }
   end
+
+
+  def tex_itemize txt
+    txt.gsub(/^((?=[\p{P}\p{Sm}])[^「」|｜\\＆\n])[^\n]+(?:\n|$)
+    (?:\1[^\n]*(?:\n|$))*/x){|x|
+      xl = x.split("\n") #\n記号がいらないのでlinesではなくsplit
+#記号から始まる行は段落にする
+      next "\n" + x + "\n" if xl.size == 1 #noindentにするか悩むところ
+#複数行の場合は箇条書きにする
+      r = "\\begin{itemize}\n"
+      xl.each{|s| r += "  \\item[#$1]#{s[1..-1]}\n"}
+      next r + "\\end{itemize}\n"
+    }
+  end
+
+  def tex_rotate txt
+  #回転する記号をもどします。
+    txt.gsub(/([：⇒])/){
+      "\\rotatebox[origin=c]{90}{#{$1}}"
+    }.gsub("\\%","\\rotatebox[origin=c]{90}{\\%}")
+    .tr('—','―') #emダッシュをU+2015に変換
+  end
+
+#ちょっと行間を空けて改段落
+  def tex_vskip txt
+    txt.gsub(/\n{9,}/){"\n\\clearpage\n\n"}.
+        gsub(/\n{6,}/){"\n\\bigskip\n\n"}.
+        gsub(/\n{5,}/){"\n\\medskip\n\n"}.
+        gsub(/\n{4}/ ){"\n\\smallskip\n\n"}
+  end
+
   #単純にtxtで指示された文章をエスケープ
   def simplestr2tex txt
     txt.gsub("\\"){"\\verb|\\|"}.gsub(/[#$%&_{}>]/){|c|"{\\" + c+"}"}
     .gsub(/[<^~]/){|c|  "{\\verb|"+c+"|}"}
     .gsub("|"){"{\\verb+|+}"}
   end
+
   #あとでここだけでも、ユニットテストしようかな
   #仕様がちと巨大化・複雑化しすぎててエンバグしやすい
   def txt2tex(txt,info)
     txt.force_encoding NKF.guess txt if !txt.valid_encoding?
     simplestr2tex(
-#タイトルの除去
+#タイトルの除去 htmlエスケープを考慮してないバグがある
       txt.sub(/(?:#{info[:title]}\n)|(\*{10,}\n)#{info[:title]}\n/,"\\1").
-     gsub("\r\n","\n").      #改行コード
+     gsub("\r\n","\n").      #改行コードをLFへ
 #同じ文字の連続だけの行があったら段落にする
       gsub(/^([^\p{P}\p{Sm}])\1{5,}$/){|s|"\n#{s}\n"}.
       gsub(/^[ 　]*/,"").  #行頭の空白を除去 段落に置換した方が見栄えはいいかも
@@ -184,16 +197,10 @@ EOS
 #<>&のHTMLエスケープの解除
     gsub("&ｌｔ;","\\verb|<|").gsub("&ｇｔ;","\\verb|>|").
     gsub("&ａｍｐ;"){"\\&"}. gsub("&ｑｕｏｔ;","\"").
-    gsub(/^((?=[\p{P}\p{Sm}])[^「」|｜\n])[^\n]+(?:\n|$)
-      (?:\1[^\n]*(?:\n|$))*/x){|x|
-      xl = x.split("\n") #\n記号がいらないのでlinesではなくsplit
-#記号から始まる行は段落にする
-      next "\n" + x + "\n" if xl.size == 1 #noindentにするか悩むところ
-#複数行の場合は箇条書きにする
-      r = "\\begin{itemize}\n"
-      xl.each{|s| r += "  \\item[#$1]#{s[1..-1]}\n"}
-      next r + "\\end{itemize}\n"
-    }.
+#スマートな改段落を目指す
+    tap{|s| s.replace tex_vskip s}.
+#記号開始行を段落or箇条書きへ
+    tap{|s| s.replace tex_itemize s}.
 #ルビその１
     gsub( /[｜|]([^\n]*?)(《[^》\n]*》|（[^）\n]*）|\([^\)\n]*\))/){
       next bouten($1,$2[1..-2]) if bouten?($1 ,$2[1..-2])
@@ -215,10 +222,8 @@ EOS
 #画像の挿入
     tap{|x|x.replace tag_narou_image x}.
     gsub("(?<!\\verb)|","{\\verb+|+}").
-#回転する記号をもどします。
-    gsub(/(：⇒)/){
-      "\\rotatebox[origin=c]{90}{#{$1}}"
-    }.gsub("\\%","\\rotatebox[origin=c]{90}{\\%}").
+#記号の回転
+    tap{|x|x.replace tex_rotate x}.
 #！？の後の全角空白を半角空白に変換
  #本来は全角のほうが正しいんだろうがTeXの中におせっかい焼きがいるようなので対策
     gsub(/([！？!?])　/,"\\1 ").
@@ -227,7 +232,8 @@ EOS
       '\\rensujiZW{' + $1.tr("０-９","0-9") +  '}'
     }.gsub(/[!！][?？]/){"{\\ExQue}"}.gsub(/[!！]{2}/){"{\\ExEx}"}.
 #L[vV]を熟語として処理
-   gsub(/(?<![ａ-ｚＡ-Ｚ])(Ｌ[Ｖｖ])(?![ａ-ｚＡ-Ｚ])/){"\\rensujiZW{#{$1.tr('ＬＶｖ','LVv')}}"}
+   gsub(/(?<![ａ-ｚＡ-Ｚ])(Ｌ[Ｖｖ])(?![ａ-ｚＡ-Ｚ])/){"\\rensujiZW{#{$1.tr('ＬＶｖ','Lvv')}}"}
+   #gsub(/(?<![ａ-ｚＡ-Ｚ])(Ｌ[Ｖｖ])(?![ａ-ｚＡ-Ｚ])/){"\\LigLv{#{$1.tr('ＬＶｖ','LVv')}}"}
   rescue => e
     puts "[ERROR]: #{e.message}"
     p info

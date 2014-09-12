@@ -34,10 +34,9 @@ ncache.cd{
     f.write <<EOS
 uplatex  #{@SETTING[:uplatex_opt]} index.tex
 uplatex  #{@SETTING[:uplatex_opt]} index.tex
-@rem uplatex  index.tex
+@rem 3回めは…いらないか
+@rem #{@SETTING[:uplatex_opt]} uplatex  index.tex
 dvipdfmx #{@SETTING[:dvipdfmx_opt]} index.dvi
-@rem landscape オプション有効時は
-@rem dvipdfmx -l index.dvi
 EOS
   }
   File.open("update.bat","w:cp932"){|f|

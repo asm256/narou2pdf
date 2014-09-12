@@ -6,7 +6,7 @@
 
 #依存するGem
 #Mechanize
-#image_size
+##image_size 廃止
 #pdf-reader
 #diff-lcs
 #Bundler
@@ -24,21 +24,22 @@
 #+-変換先がPDF
 #- ダイジェスト化時の処理が未対応
 #- なろう以外への対応がされていない
+#- ノクタも正式には対応してない
 #- 一部横書き化に対応がされていない
-#- diff
-# diff-lcsの.sdiff使えば対応できそう
-# N.date.diffで差分だけ保存とか
+#- 小説ごとの細かい調整ができない
 #現在の問題点
 #改行・段落を私が好き勝手に弄ってるのでレイアウト重視の場面で崩れる
 #横書きの時は気にならないが縦書になると改行の多さが目立つ
 # => これはもう仕様としかいいようがない
 # 気が向いたらオプションとかで設定
+# というかオプション予定がハードコーディングされてごっちゃごちゃ
+# なにをオプションにするか纏めるべき
 #紙面サイズがA5で固定 端末によっては小さいほうがいいかも？
 # => オプションで設定できるといいかも？
 #将来
-#キャッシュファイル(.txt)はzlibとか使って圧縮したいかも
-#ziprubyとか
+#キャッシュファイル(.txt)はzlibとかzip使って圧縮したいかも
 #ダウンロード時にIf-Modified-Sinceつけるといいかもしれない
+#urlっぽい文字列を見つけたら\hrefでリンクしたい
 
 require 'scanf'
 require 'fileutils'
@@ -179,7 +180,7 @@ def downloadall(url)
   }
 #diffをひとまとめに
   if outputs.size > 0 then
-    File.open('diff.txt','w').write outputs
+    File.open('diff.txt','w:utf-8').write outputs
     puts '更新がありました'
   end
   #ビルド

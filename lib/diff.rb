@@ -13,7 +13,6 @@ def str_diff(org,dst)
   data_olds = org.lines.map{|x| x.chomp}
   data_news = dst.lines.map{|x| x.chomp}
   diffs = Diff::LCS.diff(data_olds, data_news)
-  output = ""
 
   diffs.each do |piece|
     begin

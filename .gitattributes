@@ -1,0 +1,4 @@
+*.sh eol=lf
+*.bat eol=crlf
+*.cmd eol=crlf
+*.rb eol=lf
