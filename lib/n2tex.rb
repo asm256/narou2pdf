@@ -60,9 +60,9 @@ class N2Tex
 \\renewcommand{\\figurename}{挿絵}
 \\renewcommand{\\listfigurename}{挿絵 目 次} %今のところ作ってないのでいらない
 \\newcommand{\\rensujiZW}[1]{%
-\\leavevmode
-\\hbox to 1zw{\\hspace{0.070zw}\\rensuji*{\\ajTsumesuji*{#1}}}%
-%\\rensuji{\\ajTsumesuji*{#1}}%
+%\\leavevmode
+%\\hbox to 1zw{\\hspace{0.070zw}\\rensuji*{\\ajTsumesuji*{#1}}}%
+\\rensuji{\\ajTsumesuji*{#1}}%
 }
 \\newcommand{\\ExQue}{\\hbox to 1zw{\\ajLig{!?}}}
 \\newcommand{\\ExEx}{\\hbox to 1zw{\\ajLig{!!}}}
@@ -165,6 +165,16 @@ EOS
       f.write "\\end{document}\n"
     }
   end
+
+#実験的フォーマット
+ ##数字で開始されてる行の後は改行を入れる
+#数字を含む行を段落にする
+ #バグでこの仕様になったが割と読みやすいのでとりあえずこのまま
+ #なおす時は/^([０-９][^\n]*)\n(?!\n)/に修正すること
+  def txt_numberstart txt
+    txt.gsub(/([０-９]+[^\n]*)\n(?!\n)/){"\n#{$1}\n\n"}
+  end
+
   def bouten? oya , ko
     oya.size == ko.size
   end
@@ -183,14 +193,14 @@ EOS
 
 #なろう専用タグの処理
   def tag_narou txt
-    txt.gsub('【改ページ】' ,'{\\bigskip}')
-       .gsub('\\verb|<|KBR\\verb|>|','')
-       .gsub('\\verb|<|PBR\\verb|>|','')
+    txt.gsub('【改ページ】' ,'{\bigskip}')
+       .gsub('<KBR>','')
+       .gsub('<PBR>','')
   end
 
   def tag_narou_image txt
 #画像の挿入部実装
-    txt.gsub(/\\verb\|<\|[iｉ]([０-９]+?)\|([０-９]+?)\\verb\|>\|/){
+    txt.gsub(/<[iｉ]([０-９]+?)\|([０-９]+?)>/){
       agent = Mechanize.new
       agent.user_agent =
         'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)'
@@ -220,7 +230,7 @@ EOS
 
 
   def tex_itemize txt
-    txt.gsub(/^((?=[\p{P}\p{Sm}])[^「」|｜\\＆\n])[^\n]+(?:\n|$)
+    txt.gsub(/^((?=[\p{P}\p{Sm}])[^「」|｜\\＆><\n])[^\n]+(?:\n|$)
     (?:\1[^\n]*(?:\n|$))*/x){|x|
       xl = x.split("\n") #\n記号がいらないのでlinesではなくsplit
 #記号から始まる行は段落にする
@@ -229,7 +239,9 @@ EOS
       r = "\\begin{itemize}\n"
       xl.each{|s| r += "  \\item[#$1]#{s[1..-1]}\n"}
       next r + "\\end{itemize}\n"
-    }
+    }.
+#<>で始まる行をitemizeする方法わからんので段落へ
+    gsub(/^([<>])([^\n]*)/,"\n\\1\\2\n")
   end
 
   def tex_rotate txt
@@ -250,9 +262,8 @@ EOS
 
   #単純にtxtで指示された文章をエスケープ
   def simplestr2tex txt
-    txt.gsub("\\"){"\\verb|\\|"}.gsub(/[#$%&_{}>]/){|c|"{\\" + c+"}"}
-    .gsub(/[<^~]/){|c|  "{\\verb|"+c+"|}"}
-    .gsub("|"){"{\\verb+|+}"}
+    txt.gsub("\\"){"\\verb+\\+"}.gsub(/[#$%&_{}>]/){|c|"{\\" + c+"}"}
+    .gsub(/[<^~|]/){|c|  "{\\verb+"+c+"+}"}
   end
 
   #あとでここだけでも、ユニットテストしようかな
@@ -272,12 +283,14 @@ EOS
 #ココで汎用texエスケープをしてますので注意！
     gsub("{\\&}","&").gsub("{\\verb+|+}"){"|"}. #あとで使う特殊文字を元に戻す
 #<>&のHTMLエスケープの解除
-    gsub("&ｌｔ;","\\verb|<|").gsub("&ｇｔ;","\\verb|>|").
+    gsub("&ｌｔ;","<").gsub("&ｇｔ;",">").
     gsub("&ａｍｐ;"){"\\&"}. gsub("&ｑｕｏｔ;","\"").
 #スマートな改段落を目指す
     tap{|s| s.replace tex_vskip s}.
 #記号開始行を段落or箇条書きへ
     tap{|s| s.replace tex_itemize s}.
+#実験機能 数字開始行を強制改行(掲示板方式を読みやすくする狙い)
+    tap{|s| s.replace txt_numberstart s}.
 #ルビその１
     gsub( /[｜|]([^\n]*?)(《[^》\n]*》|（[^）\n]*）|\([^\)\n]*\))/){
       next bouten($1,$2[1..-2]) if bouten?($1 ,$2[1..-2])
@@ -307,10 +320,12 @@ EOS
     gsub(/([！？!?])　/,"\\1 ").
 #数字の連数字化
     gsub(/(?<![０-９])([０-９]{2,3})(?![０-９])/){
-      '\\rensujiZW{' + $1.tr("０-９","0-9") +  '}'
+      '\rensujiZW{' + $1.tr("０-９","0-9") +  '}'
     }.gsub(/[!！][?？]/){"{\\ExQue}"}.gsub(/[!！]{2}/){"{\\ExEx}"}.
 #L[vV]を熟語として処理
-   gsub(/(?<![ａ-ｚＡ-Ｚ])(Ｌ[Ｖｖ])(?![ａ-ｚＡ-Ｚ])/){"\\rensuji{#{$1.tr('ＬＶｖ','Lvv')}}"}
+   gsub(/(?<![ａ-ｚＡ-Ｚ])(Ｌ[Ｖｖ])(?![ａ-ｚＡ-Ｚ])/){"\\rensuji{#{$1.tr('ＬＶｖ','Lvv')}}"}.
+#<>をtexエスケープ
+   gsub(/(?<!\\item\[)([<>])/ , '\verb|\1|')
   rescue => e
     puts "[ERROR]: #{e.message}"
     p info
