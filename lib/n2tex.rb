@@ -3,6 +3,8 @@
 #参考資料 JIS X 4051
 #日本語組版処理の要件
 #http://www.w3.org/TR/jlreq/ja/
+#LaTeX 小説同人誌制作術
+#http://p-act.sakura.ne.jp/PARALLEL_ACT/LaTeX-Dojin/
 
 #小説の情報を構造体にまとめる
 #:name 名前
@@ -36,7 +38,7 @@ class N2Tex
       f.write <<EOS
 \\documentclass[11pt,twoside,a5j,openany]{utbook}
 \\usepackage{furikana}
-\\usepackage[uplatex]{otf}
+\\usepackage[uplatex,expert,deluxe]{otf}
 \\usepackage[dvipdfmx]{hyperref}
 \\usepackage[dvipdfmx]{pxjahyper}
 \\usepackage[dvipdfmx]{graphicx}
@@ -50,6 +52,7 @@ class N2Tex
  pdfkeywords={小説家になろう}}  %そのうち設定予定。。。は未定
 \\AtBeginDvi{\\special{pdf:pagesize width 148mm height 210mm}}
 \\AtBeginDvi{\\special{pdf:docview <</ViewerPreferences <</Direction /R2L>> >>}}
+\\AtBeginDvi{\\special{pdf:mapline otf-cjmr-h Identity-H KozMinProVI-Regular}}
 %上２行で用紙サイズ設定および右綴じを実現
 \\addtolength{\\topmargin}{-15truemm}
 \\addtolength{\\textwidth}{25truemm}
@@ -58,7 +61,8 @@ class N2Tex
 \\renewcommand{\\listfigurename}{挿絵 目 次} %今のところ作ってないのでいらない
 \\newcommand{\\rensujiZW}[1]{%
 \\leavevmode
-\\hbox to 1zw{\\hspace{0.070zw}\\rensuji*{#1}}%
+\\hbox to 1zw{\\hspace{0.070zw}\\rensuji*{\\ajTsumesuji*{#1}}}%
+%\\rensuji{\\ajTsumesuji*{#1}}%
 }
 \\newcommand{\\ExQue}{\\hbox to 1zw{\\ajLig{!?}}}
 \\newcommand{\\ExEx}{\\hbox to 1zw{\\ajLig{!!}}}
@@ -176,6 +180,14 @@ EOS
     }
     out
   end
+
+#なろう専用タグの処理
+  def tag_narou txt
+    txt.gsub('【改ページ】' ,'{\\bigskip}')
+       .gsub('\\verb|<|KBR\\verb|>|','')
+       .gsub('\\verb|<|PBR\\verb|>|','')
+  end
+
   def tag_narou_image txt
 #画像の挿入部実装
     txt.gsub(/\\verb\|<\|[iｉ]([０-９]+?)\|([０-９]+?)\\verb\|>\|/){
@@ -283,6 +295,8 @@ EOS
  #ただし、字下げはしない
     gsub(/^[「｢]/,"\n\\noindent\n「").
     gsub(/[」｣]$/,"」\n").
+#なろう専用タグ
+    tap{|x|x.replace tag_narou x}.
 #画像の挿入
     tap{|x|x.replace tag_narou_image x}.
     gsub("(?<!\\verb)|","{\\verb+|+}").
@@ -296,8 +310,7 @@ EOS
       '\\rensujiZW{' + $1.tr("０-９","0-9") +  '}'
     }.gsub(/[!！][?？]/){"{\\ExQue}"}.gsub(/[!！]{2}/){"{\\ExEx}"}.
 #L[vV]を熟語として処理
-   gsub(/(?<![ａ-ｚＡ-Ｚ])(Ｌ[Ｖｖ])(?![ａ-ｚＡ-Ｚ])/){"\\rensujiZW{#{$1.tr('ＬＶｖ','Lvv')}}"}
-   #gsub(/(?<![ａ-ｚＡ-Ｚ])(Ｌ[Ｖｖ])(?![ａ-ｚＡ-Ｚ])/){"\\LigLv{#{$1.tr('ＬＶｖ','LVv')}}"}
+   gsub(/(?<![ａ-ｚＡ-Ｚ])(Ｌ[Ｖｖ])(?![ａ-ｚＡ-Ｚ])/){"\\rensuji{#{$1.tr('ＬＶｖ','Lvv')}}"}
   rescue => e
     puts "[ERROR]: #{e.message}"
     p info
