@@ -46,12 +46,9 @@ require 'fileutils'
 require 'nkf'
 require 'date'
 require 'time'
-#require "pry"
+
 require 'bundler/setup'
 Bundler.require
-#require 'mechanize'
-#require 'image_size'
-#require 'diff-lcs'
 
 require_relative 'lib/cache'
 require_relative 'lib/n2tex'

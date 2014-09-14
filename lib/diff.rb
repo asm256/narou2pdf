@@ -1,4 +1,4 @@
-require 'diff/lcs/hunk'
+#require 'diff/lcs/hunk'
 
 #diff-lcsのldiffから抜粋
 #diff-lcs
