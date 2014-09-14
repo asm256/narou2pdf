@@ -64,9 +64,8 @@ class N2Tex
 %\\hbox to 1zw{\\hspace{0.070zw}\\rensuji*{\\ajTsumesuji*{#1}}}%
 \\rensuji{\\ajTsumesuji*{#1}}%
 }
-\\newcommand{\\ExQue}{\\hbox to 1zw{\\ajLig{!?}}}
-\\newcommand{\\ExEx}{\\hbox to 1zw{\\ajLig{!!}}}
-\\newcommand{\\Z}{\\hspace{1zw}}
+\\newcommand{\\ExQue}{\\ajLig{!?}}
+\\newcommand{\\ExEx}{\\ajLig{!!}}
 \\makeatletter
 %\\noindent\\null の後で、行頭括弧が揃うようにする
 \\let\\orig@null=\\null
@@ -191,6 +190,11 @@ EOS
     out
   end
 
+#先頭および末尾の空白を除去
+def txt_trim txt
+  txt.gsub(/^[ 　 ]+/,'').gsub(/[ 　  ]+$/,'')
+end
+
 #なろう専用タグの処理
   def tag_narou txt
     txt.gsub('【改ページ】' ,'{\bigskip}')
@@ -276,7 +280,9 @@ EOS
      gsub("\r\n","\n").      #改行コードをLFへ
 #同じ文字の連続だけの行があったら段落にする
       gsub(/^([^\p{P}\p{Sm}])\1{5,}$/){|s|"\n#{s}\n"}.
-      gsub(/^[ 　]*/,"").  #行頭の空白を除去 段落に置換した方が見栄えはいいかも
+#行頭・末尾の空白を除去 行頭空白は段落に置換した方が元のデザイン的には正しいが
+  #縦組で読む場合段落多すぎて不快に感じるので
+      tap{|s|s.replace txt_trim s}.
       tr("a-zA-Z0-9","ａ-ｚＡ-Ｚ０-９") #問題児,半角英数字の全角化
 #これより後ろは半角英数字は全角に置換されてます
     ).
