@@ -33,8 +33,8 @@ TeXLive 2014なら大丈夫なはず
 windowd環境用になっているので他環境の場合  
 lib/build.rbの書き換えが必要になります
 
- * 具体的にはstartコマンドはないので、ただのuplatexに
- * bat をsh
+  * 具体的にはstartコマンドはないので、ただのuplatexに
+  * bat をsh
 一応コレで動くと思うけど試してはないです
 
 * $ ruby narou2pdf  
