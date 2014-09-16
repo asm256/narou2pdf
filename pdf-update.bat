@@ -1,2 +1,2 @@
 ruby narou2pdf.rb --pdf %*
-@pause
+@timeout 120
