@@ -15,7 +15,6 @@
 NovelInfo = Struct.new(:name ,:url, :author,:chapter){
   def make_index
     @flat_index ||= []
-    #binding.pry
     chapter.each{|n|
     @flat_index.concat n[:index]}
   end
@@ -38,7 +37,7 @@ class N2Tex
       f.write <<EOS
 \\documentclass[11pt,twoside,a5j,openany]{utbook}
 \\usepackage{furikana}
-\\usepackage[uplatex,expert,deluxe]{otf}
+\\usepackage[uplatex,expert,deluxe,burasage]{otf}
 \\usepackage[dvipdfmx]{hyperref}
 \\usepackage[dvipdfmx]{pxjahyper}
 \\usepackage[dvipdfmx]{graphicx}
