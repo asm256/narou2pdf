@@ -62,7 +62,7 @@ class N2Tex
 \\newcommand{\\rensujiZW}[1]{%
 %\\leavevmode
 %\\hbox to 1zw{\\hspace{0.070zw}\\rensuji*{\\ajTsumesuji*{#1}}}%
-\\rensuji{\\ajTsumesuji*{#1}}%
+\\rensuji*{\\ajTsumesuji*{#1}}%
 }
 \\newcommand{\\ExQue}{\\ajLig{!?}}
 \\newcommand{\\ExEx}{\\ajLig{!!}}
@@ -195,6 +195,13 @@ def txt_trim txt
   txt.gsub(/^[ 　 ]+/,'').gsub(/[ 　  ]+$/,'')
 end
 
+#引用符を日本版引用符に変更
+def txt_quotation txt
+  txt.gsub(/(?:"(?:[^\n"]*\n?){,3}")|(?:[“”](?:[^\n“”]*\n?){,3}[“”])/){|s|
+    "〝#{s[1..-2]}〟"
+  }
+end
+
 #なろう専用タグの処理
   def tag_narou txt
     txt.gsub('【改ページ】' ,'{\bigskip}')
@@ -291,6 +298,8 @@ EOS
 #<>&のHTMLエスケープの解除
     gsub("&ｌｔ;","<").gsub("&ｇｔ;",">").
     gsub("&ａｍｐ;"){"\\&"}. gsub("&ｑｕｏｔ;","\"").
+    #引用符を日本語用に
+    tap{|s|s.replace txt_quotation s}.
 #スマートな改段落を目指す
     tap{|s| s.replace tex_vskip s}.
 #記号開始行を段落or箇条書きへ
@@ -321,16 +330,16 @@ EOS
     gsub("(?<!\\verb)|","{\\verb+|+}").
 #記号の回転
     tap{|x|x.replace tex_rotate x}.
-#！？の後の全角空白を半角空白に変換
+#！？の後の全角/半角空白を削除
  #本来は全角のほうが正しいんだろうがTeXの中におせっかい焼きがいるようなので対策
-    gsub(/([！？!?])　/,"\\1 ").
+    gsub(/([！？!?])[　 ]/,"\\1").
 #数字の連数字化
  #カンマ付き数字に対応できないorz
     gsub(/(?<![０-９,])([０-９]{2,4})(?![０-９])/){
       '\rensujiZW{' + $1.tr("０-９","0-9") +  '}'
     }.gsub(/[!！][?？]/){"{\\ExQue}"}.gsub(/[!！]{2}/){"{\\ExEx}"}.
 #L[vV]を熟語として処理
-   gsub(/(?<![ａ-ｚＡ-Ｚ])(Ｌ[Ｖｖ])(?![ａ-ｚＡ-Ｚ])/){"\\rensuji{#{$1.tr('ＬＶｖ','Lvv')}}"}.
+   gsub(/(?<![ａ-ｚＡ-Ｚ])(Ｌ[Ｖｖ])(?![ａ-ｚＡ-Ｚ])/){"\\rensuji*{#{$1.tr('ＬＶｖ','Lvv')}}"}.
 #<>をtexエスケープ
    gsub(/(?<!\\item\[)([<>])/ , '\verb|\1|')
   rescue => e
