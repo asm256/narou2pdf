@@ -165,14 +165,16 @@ EOS
   end
 
 #実験的フォーマット
- ##数字で開始されてる行の後は改行を入れる
-#数字を含む行を段落にする
- #バグでこの仕様になったが割と読みやすいのでとりあえずこのまま
- #なおす時は/^([０-９][^\n]*)\n(?!\n)/に修正すること
+#数字で開始されてる行の後は改行を入れる
   def txt_numberstart txt
-    txt.gsub(/([０-９]+[^\n]*)\n(?!\n)/){"\n#{$1}\n\n"}
+    txt.gsub(/^([０-９]+[^\n]*)\n(?!\n)/){"\n#{$1}\n\n"}
   end
-
+#行末が約物でない場合レイアウト重視場面と判断し段落に変える
+  def txt_smartend txt
+  txt.gsub(/^([^\n]+?[^\na-zA-Z0-9。、」』‥…～♪.．？?！!])$/){
+    "\n#{$1}\n"
+  }
+  end
   def bouten? oya , ko
     oya.size == ko.size
   end
@@ -257,7 +259,7 @@ EOS
   def tex_rotate txt
   #回転する記号をもどします。
    #U+21D1が表示されない問題orz
-    txt.gsub(/([:：⇐⇒＞＜∈∋≪≫])/){
+    txt.gsub(/([：⇐⇒＞＜∈∋≪≫])/){
       "\\rotatebox[origin=c]{270}{#{$1}}"
     }.gsub("\\%","\\rotatebox[origin=c]{270}{\\%}")
     .gsub(/[—－]/,'―')  #emダッシュ/全角ハイフンをU+2015に変換
@@ -307,6 +309,7 @@ EOS
     tap{|s|s.replace txt_quotation s}.
 #スマートな改段落を目指す
     tap{|s| s.replace tex_vskip s}.
+    tap{|s| s.replace txt_smartend s}.
 #記号開始行を段落or箇条書きへ
     tap{|s| s.replace tex_itemize s}.
 #実験機能 数字開始行を強制改行(掲示板方式を読みやすくする狙い)
