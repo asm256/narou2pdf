@@ -58,7 +58,7 @@ require_relative 'lib/diff'
 
 
 def n_to_code(ncode)
-  code = ncode.scan(/n(\d{4})(.*)/)[0]
+  code = ncode.scan(/[nN](\d{4})(.*)/)[0]
   n = code[0].to_i
   k = 1
   code[1].reverse.each_char{|s|
@@ -77,7 +77,6 @@ def downloadall(url)
   ua.user_agent =
     'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)'
   ua.max_history = 1
-  ncode = url.scan( /\.com\/(n\d{4}.*)\//)[0][0]
   
   config = YAML.load File.open("global.config","rb")
   if u = url.scan(/(ncode\.syosetu\.com)\/([nN]\d{4}[a-zA-Z]*)/).first then
@@ -87,12 +86,14 @@ def downloadall(url)
     url = "http://#{u[0]}/#{u[1].downcase}/"
     url_txtdown = "http://novel18.syosetu.com/txtdownload/"
   end
+  ncode = url.scan( /\.com\/([nN]\d{4}.*)\//)[0][0]
   indpage = ua.get url
-  #作者ページ公開してる場合
-  author = indpage.link_with(:href =>/http:\/\/mypage\./)
+  ##作者ページ公開してる場合
+  #author = indpage.link_with(:href =>/http:\/\/x?mypage\./)
+  author = indpage.at(".novel_writername").text.scan(/：(.*)$/).first
 #取得できなかったら例外飛ばすので後で考える
   raise "Failed read Author Name" if author == nil
-  author = author.text
+  author = author.first.strip
   chapters =[]
   indpage.search(".index_box > *").each{|node|
     if "chapter_title" == node.get_attribute("class") then
@@ -118,7 +119,7 @@ def downloadall(url)
   }
   novel_info = NovelInfo.new(indpage.title ,url ,author ,chapters)
   novel_info.make_index
-  page =ua.get("http://ncode.syosetu.com/txtdownload/"+
+  page =ua.get(url_txtdown+
                "top/ncode/#{n_to_code ncode}/"
               )
   #dir = FileUtils.mkdir_p(".narou/#{ncode}")
