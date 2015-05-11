@@ -55,7 +55,7 @@ EOS
   #print("表示しますか？表示しないときはnを入力\n")
   #return if gets.strip() =~ /^[nN]/
   puts 'open pdf'
-  `pdfopen -r11 --file "#{outtitle}.pdf"`
+  `pdfopen --r15 --file "#{outtitle}.pdf"`
   FileUtils.rm(ncache.path('index.log'))
 end
 
