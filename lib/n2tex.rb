@@ -46,6 +46,7 @@ class N2Tex
  bookmarksnumbered=true,
  setpagesize=false,
  pdfpagelayout=TwoPageLeft,
+ pdfdirection={R2L},
  pdftitle={#{simplestr2tex @novel_info[:name]}},
  pdfauthor={#{simplestr2tex @novel_info[:author]}},
  pdfsubject={#{simplestr2tex @novel_info[:url]}},
