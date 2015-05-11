@@ -25,17 +25,18 @@ NovelInfo = Struct.new(:name ,:url, :author,:chapter){
 class N2Tex
 #@SETTINGをそのうち外部から取り込む
   #横書きの時はangleを0に
-  def initialize(novel_info,novel_cache)
-    @SETTING= {}
-    @SETTING[:IMGOPT] = ""
-    @novel_info = novel_info
+  def initialize(novel_info,novel_cache,config)
     @ncache = novel_cache
+    @SETTING= config
+    @SETTING.merge! YAML.load @ncache.read "local.config" if @ncache.exist? "local.config"
+    #@SETTING[:IMGOPT] = ""
+    @novel_info = novel_info
   end
   def makeIndex()
     @ncache.open("index.tex","wb"){|f|
 #プリアンブル A5サイズに設定
       f.write <<EOS
-\\documentclass[11pt,twoside,a5j,openany]{utbook}
+\\documentclass[#{@SETTING[:paper][:fontsize]},twoside,#{@SETTING[:paper][:size]},openany]{utbook}
 \\usepackage{furikana}
 \\usepackage[uplatex,expert,deluxe,burasage]{otf}
 \\usepackage[dvipdfmx]{hyperref}
@@ -49,13 +50,10 @@ class N2Tex
  pdfauthor={#{simplestr2tex @novel_info[:author]}},
  pdfsubject={#{simplestr2tex @novel_info[:url]}},
  pdfkeywords={小説家になろう}}  %そのうち設定予定。。。は未定
-\\AtBeginDvi{\\special{pdf:pagesize width 148mm height 210mm}}
-\\AtBeginDvi{\\special{pdf:docview <</ViewerPreferences <</Direction /R2L>> >>}}
-\\AtBeginDvi{\\special{pdf:mapline otf-cjmr-h Identity-H KozMinProVI-Regular}}
-%上２行で用紙サイズ設定および右綴じを実現
-\\addtolength{\\topmargin}{-15truemm}
-\\addtolength{\\textwidth}{25truemm}
-\\addtolength{\\footskip}{-10truemm}  %余白を少し小さく
+\\AtBeginDvi{\\special{pdf:pagesize #{@SETTING[:paper][:pdfpagesize]}}}
+EOS
+      f.puts @SETTING[:add_header]
+      f.write <<EOS
 \\renewcommand{\\figurename}{挿絵}
 \\renewcommand{\\listfigurename}{挿絵 目 次} %今のところ作ってないのでいらない
 \\newcommand{\\rensujiZW}[1]{%
@@ -289,7 +287,8 @@ EOS
     simplestr2tex(
 #タイトルの除去 htmlエスケープを考慮してないバグがある
       txt.sub(/(?:#{info[:title]}\n)|(\*{10,}\n)#{info[:title]}\n/,"\\1").
-     gsub("\r\n","\n").      #改行コードをLFへ
+      gsub("\r\n","\n").      #改行コードをLFへ
+      tap{|s| @SETTING[:replace_pre].reduce(s){|memo,item| memo.gsub!(Regexp.new(item[0]),item[1]) }}.
 #同じ文字の連続だけの行があったら段落にする
       gsub(/^([^\p{P}\p{Sm}])\1{5,}$/){|s|"\n#{s}\n"}.
 #行頭・末尾の空白を除去 行頭空白は段落に置換した方が元のデザイン的には正しいが
@@ -353,7 +352,8 @@ EOS
    gsub(/(?<![ａ-ｚＡ-Ｚ])([Ｏｏ][ｒＴ][ｚＺ])(?![ａ-ｚＡ-Ｚ])/){"\\rensuji*{#{$1.tr('ＯｏｒＴｚＺ','OorTzZ')}}"}.
    gsub(/(?<![ａ-ｚＡ-Ｚ])ｋ㎡(?![ａ-ｚＡ-Ｚ])/,'\ajLig{km2}').
 #<>をtexエスケープ
-   gsub(/(?<!(?:\\item\[)|\\)([<>])/ , '\verb|\1|')
+   gsub(/(?<!(?:\\item\[)|\\)([<>])/ , '\verb|\1|').
+   tap{|s| @SETTING[:replace_post].reduce(s){|memo,item| memo.gsub!(Regexp.new(item[0]),item[1]) }}
   rescue => e
     puts "[ERROR]: #{e.message}"
     p info

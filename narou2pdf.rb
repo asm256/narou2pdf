@@ -46,6 +46,7 @@ require 'fileutils'
 require 'nkf'
 require 'date'
 require 'time'
+require 'yaml'
 
 require 'bundler/setup'
 Bundler.require
@@ -77,6 +78,15 @@ def downloadall(url)
     'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)'
   ua.max_history = 1
   ncode = url.scan( /\.com\/(n\d{4}.*)\//)[0][0]
+  
+  config = YAML.load File.open("global.config","rb")
+  if u = url.scan(/(ncode\.syosetu\.com)\/([nN]\d{4}[a-zA-Z]*)/).first then
+    url = "http://#{u[0]}/#{u[1].downcase}/"
+    url_txtdown = "http://ncode.syosetu.com/txtdownload/"
+  elsif u = url.scan(/(novel18\.syosetu\.com)\/([nN]\d{4}[a-zA-Z]*)/).first then
+    url = "http://#{u[0]}/#{u[1].downcase}/"
+    url_txtdown = "http://novel18.syosetu.com/txtdownload/"
+  end
   indpage = ua.get url
   #作者ページ公開してる場合
   author = indpage.link_with(:href =>/http:\/\/mypage\./)
@@ -112,8 +122,9 @@ def downloadall(url)
                "top/ncode/#{n_to_code ncode}/"
               )
   #dir = FileUtils.mkdir_p(".narou/#{ncode}")
+
   novel_cache=CacheUtil.new ncode
-  nconv = N2Tex.new( novel_info ,novel_cache)
+  nconv = N2Tex.new( novel_info ,novel_cache,config)
   nconv.makeIndex
   novel_info_flat = novel_info.flat_index
 #ここらへんまでが小説情報の取得
