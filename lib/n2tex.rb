@@ -116,7 +116,7 @@ EOS
       \\fi
     \\fi
   \\fi}
-\\def\\@gnewline #1{
+\\def\\@gnewline #1{%
   \\ifvmode
     \\@nolnerr
   \\else
