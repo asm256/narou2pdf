@@ -289,7 +289,7 @@ EOS
 #タイトルの除去 htmlエスケープを考慮してないバグがある
       txt.sub(/(?:#{info[:title]}\n)|(\*{10,}\n)#{info[:title]}\n/,"\\1").
       gsub("\r\n","\n").      #改行コードをLFへ
-      tap{|s| @SETTING[:replace_pre].reduce(s){|memo,item| memo.gsub!(Regexp.new(item[0]),item[1]) }}.
+      tap{|s| @SETTING[:replace_pre].reduce(s){|memo,item| memo.gsub!(item[0],item[1]);memo }}.
 #同じ文字の連続だけの行があったら段落にする
       gsub(/^([^\p{P}\p{Sm}])\1{5,}$/){|s|"\n#{s}\n"}.
 #行頭・末尾の空白を除去 行頭空白は段落に置換した方が元のデザイン的には正しいが
@@ -360,7 +360,7 @@ EOS
    gsub(/(?<![ａ-ｚＡ-Ｚ])ｋ㎡(?![ａ-ｚＡ-Ｚ])/,'\ajLig{km2}').
 #<>をtexエスケープ
    gsub(/(?<!(?:\\item\[)|\\)([<>])/ , '\verb|\1|').
-   tap{|s| @SETTING[:replace_post].reduce(s){|memo,item| memo.gsub!(Regexp.new(item[0]),item[1]) }}
+   tap{|s| @SETTING[:replace_post].reduce(s){|memo,item| memo.gsub!(item[0],item[1]);memo}}
   rescue => e
     puts "[ERROR]: #{e.message}"
     p info
