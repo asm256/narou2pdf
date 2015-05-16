@@ -367,9 +367,11 @@ EOS
    tap{|s| @SETTING[:replace_post].reduce(s){|memo,item| memo.gsub!(item[0],item[1]);memo}}
   rescue => e
     puts "[ERROR]: #{e.message}"
+    if p then
     p info
-    puts info[:nth]
-    puts info[:title]
+      puts info[:nth]
+      puts info[:title]
+    end
     raise e
   end
 end
