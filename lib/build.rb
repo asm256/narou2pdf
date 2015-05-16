@@ -48,7 +48,7 @@ EOS
   }
   #system("build.bat")
   build2
-  FileUtils.rm(["index.toc","index.dvi","index.aux","index.out"],
+  FileUtils.rm_f(["index.toc","index.dvi","index.aux","index.out"],
   {:verbose => true})
 }
   FileUtils.mv(ncache.path('index.pdf'),"#{outtitle}.pdf")

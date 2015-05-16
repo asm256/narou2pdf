@@ -135,9 +135,12 @@ EOS
 \\begin{flushright}
 \\end{flushright}
 \\end{titlepage}
+EOS
+      f.write <<EOS if @novel_info[:chapter].size > 0
 \\tableofcontents
 \\markboth{}{}
 EOS
+      f.write "\\input{0.tex}\n" if @novel_info[:chapter].size == 0
       @novel_info[:chapter].each{|c|
 #チャプター毎の目次
         if !c[:chap].nil? then
@@ -285,9 +288,10 @@ EOS
   #仕様がちと巨大化・複雑化しすぎててエンバグしやすい
   def txt2tex(txt,info)
     txt.force_encoding NKF.guess txt if !txt.valid_encoding?
-    simplestr2tex(
+    txt.force_encoding NKF.guess txt if txt.encoding == Encoding::ASCII_8BIT
 #タイトルの除去 htmlエスケープを考慮してないバグがある
-      txt.sub(/(?:#{info[:title]}\n)|(\*{10,}\n)#{info[:title]}\n/,"\\1").
+    txt = txt.sub(/(?:#{info[:title]}\n)|(\*{10,}\n)#{info[:title]}\n/,"\\1") if info
+    simplestr2tex(txt.
       gsub("\r\n","\n").      #改行コードをLFへ
       tap{|s| @SETTING[:replace_pre].reduce(s){|memo,item| memo.gsub!(item[0],item[1]);memo }}.
 #同じ文字の連続だけの行があったら段落にする

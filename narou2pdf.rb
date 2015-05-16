@@ -138,6 +138,28 @@ def downloadall(url)
     raise "part delete"
   end
   outputs = ""
+  if page.forms[0].field_with(:name => "no") == nil then
+    c_index = 0
+    begin
+      txt = page.forms[0].submit.body
+    rescue Mechanize::ResponseCodeError => ex
+      case ex.response_code
+      when '404' then
+        p "E404"
+        return
+      when '503' then
+        print '503Errorの為5秒間休みます\n'
+        p(ex.page.uri)
+        sleep 5
+        retry
+      else
+        warn ex.message
+      end
+    end
+    novel_cache.write "0.txt",txt
+    novel_cache.write "0.tex" , nconv.txt2tex(txt,novel_info_flat[c_index])
+    return build(novel_cache,novel_info)
+  end
   page.forms[0].field_with(:name => "no").options.each{|o|
     o.select
     c_index = o.to_s.to_i-1#インデックスのカウンタ
