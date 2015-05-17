@@ -298,7 +298,7 @@ EOS
 #タイトルの除去 htmlエスケープを考慮してないバグがある
     txt = txt.sub(/(?:#{info[:title]}\n)|(\*{10,}\n)#{info[:title]}\n/,"\\1") if info
     simplestr2tex(txt.
-      gsub("\r\n","\n").      #改行コードをLFへ
+      gsub("\r+\n","\n").      #改行コードをLFへ
       tap{|s| @SETTING[:replace_pre].reduce(s){|memo,item| memo.gsub!(item[0],item[1]);memo }}.
 #同じ文字の連続だけの行があったら段落にする
       gsub(/^([^\p{P}\p{Sm}])\1{5,}$/){|s|"\n#{s}\n"}.
