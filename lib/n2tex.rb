@@ -178,7 +178,7 @@ EOS
   }
   end
   def bouten? oya , ko
-    oya.size == ko.size
+    oya.size == ko.size && !(/[ 　	]/ === oya)
   end
   def bouten_v? oya,ko
     return false unless bouten?(oya,ko)
