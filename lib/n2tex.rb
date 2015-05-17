@@ -290,12 +290,19 @@ EOS
     txt.tr("\\<>#$%&_{}" , "\\＜＞＃＄％＆＿｛｝")
   end
 
+  #HTMLエスケープの解除
+  def html_unescape txt
+    txt.gsub("&gt;",">").gsub("&lt;","<").gsub("&amp;","&").gsub("&quot;",'"')
+  end
+
   #あとでここだけでも、ユニットテストしようかな
   #仕様がちと巨大化・複雑化しすぎててエンバグしやすい
   def txt2tex(txt,info)
     txt.force_encoding NKF.guess txt if !txt.valid_encoding?
     txt.force_encoding NKF.guess txt if txt.encoding == Encoding::ASCII_8BIT
-#タイトルの除去 htmlエスケープを考慮してないバグがある
+    #HTMLエスケープ解除
+    txt = html_unescape txt
+    #タイトルの除去
     txt = txt.sub(/(?:#{info[:title]}\n)|(\*{10,}\n)#{info[:title]}\n/,"\\1") if info
     simplestr2tex(txt.
       gsub("\r+\n","\n").      #改行コードをLFへ
@@ -318,9 +325,6 @@ EOS
       uri = $2.tr("ａ-ｚＡ-Ｚ０-９／","a-zA-Z0-9/")
       "\\url{#{scm}://#{uri}}"
     }.
-#<>&のHTMLエスケープの解除
-    gsub("&ｌｔ;","<").gsub("&ｇｔ;",">").
-    gsub("&ａｍｐ;"){"\\&"}. gsub("&ｑｕｏｔ;","\"").
     #引用符を日本語用に
     tap{|s|s.replace txt_quotation s}.
 #スマートな改段落を目指す
@@ -368,8 +372,6 @@ EOS
    gsub(/(?<![ａ-ｚＡ-Ｚ])(Ｌ[Ｖｖ][.．]?)(?![ａ-ｚＡ-Ｚ])/){"\\rensuji*{#{$1.tr('ＬＶｖ．','Lvv.')}}"}.
    gsub(/(?<![ａ-ｚＡ-Ｚ])([Ｏｏ][ｒＴ][ｚＺ])(?![ａ-ｚＡ-Ｚ])/){"\\rensuji*{#{$1.tr('ＯｏｒＴｚＺ','OorTzZ')}}"}.
    gsub(/(?<![ａ-ｚＡ-Ｚ])ｋ㎡(?![ａ-ｚＡ-Ｚ])/,'\ajLig{km2}').
-#<>をtexエスケープ
-   gsub(/(?<!(?:\\item\[)|\\)([<>])/ , '\verb|\1|').
    tap{|s| @SETTING[:replace_post].reduce(s){|memo,item| memo.gsub!(item[0],item[1]);memo}}
   rescue => e
     puts "[ERROR]: #{e.message}"
