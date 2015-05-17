@@ -41,6 +41,7 @@
 #ダウンロード時にIf-Modified-Sinceつけるといいかもしれない
 #urlっぽい文字列を見つけたら\hrefでリンクしたい
 
+require 'pp'
 require 'scanf'
 require 'fileutils'
 require 'nkf'

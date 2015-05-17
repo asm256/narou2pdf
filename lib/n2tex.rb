@@ -29,6 +29,7 @@ class N2Tex
     @ncache = novel_cache
     @SETTING= config
     @SETTING.merge! YAML.load @ncache.read "local.config" if @ncache.exist? "local.config"
+    pp @SETTING
     #@SETTING[:IMGOPT] = ""
     @novel_info = novel_info
   end
