@@ -340,12 +340,14 @@ EOS
       next $2 if ($1.eql? "") || $1[-1] == "|" || $1[-1] == "｜"
       next "\\kana{#{$1}}{#{$2[1..-2]}}"
     }.
-#ルビその2 これは作者ミスパターンも多いので()を残す
+#ルビその2 config読んで:ruby_parlenが1ならば()を残す、2ならば()を消す その他の場合はルビとして扱わない
     gsub(/(\p{Han}+)(《[\p{Katakana}\p{Hiragana}ーｰﾞﾟ・･]+》
     |\([\p{Katakana}\p{Hiragana}ーｰﾞﾟ・･]+\)
     |（[\p{Katakana}\p{Hiragana}ーｰﾞﾟ・･]+）)/x){
      next bouten($1,$2[1..-2]) if bouten_v?($1 ,$2[1..-2])
-     "\\kana{#{$1}}{#{$2}}"
+     next "\\kana{#{$1}}{#{$2}}" if @SETTING[:ruby_parlen] == 1
+     next "\\kana{#{$1}}{#{$2[1..-2]}}" if @SETTING[:ruby_parlen] == 2
+     "$1$2"
     }.
 #セリフは段落を変える
  #ただし、字下げはしない
