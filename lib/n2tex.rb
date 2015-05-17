@@ -144,18 +144,18 @@ EOS
       @novel_info[:chapter].each{|c|
 #チャプター毎の目次
         if !c[:chap].nil? then
-        ct = simplestr2tex c[:chap]
+        ct = tex_titlize c[:chap]
         f.write <<EOS
-\\chapter*{#{ct}}
+\\chapter*{#{tex_rotate ct}}
 \\addcontentsline{toc}{chapter}{#{ct}}%
 \\markboth{#{ct}}{}
 EOS
         end
         c[:index].each{|wa|
 #セクション毎の目次
-          t = simplestr2tex wa[:title]
+          t = tex_titlize wa[:title]
           f.write <<EOS
-\\section*{#{t}}
+\\section*{#{tex_rotate t}}
 \\markright{#{t}}
 \\addcontentsline{toc}{section}{#{t}}
 \\input{#{wa[:nth]}.tex}
@@ -280,8 +280,14 @@ EOS
 
   #単純にtxtで指示された文章をエスケープ
   def simplestr2tex txt
-    txt.gsub("\\"){"\\verb+\\+"}.gsub(/[#$%&_{}>]/){|c|"{\\" + c+"}"}
-    .gsub(/[<^~|]/){|c|  "{\\verb+"+c+"+}"}
+    txt.gsub("\\"){"\\verb+\\+"}.gsub(/[#$%&_{}]/){|c|"{\\" + c+"}"}
+    .gsub(/[<>^~|]/){|c|  "{\\verb+"+c+"+}"}
+  end
+
+  #チャプタ文字列化
+  def tex_titlize txt
+    #手抜き
+    txt.tr("\\<>#$%&_{}" , "\\＜＞＃＄％＆＿｛｝")
   end
 
   #あとでここだけでも、ユニットテストしようかな
